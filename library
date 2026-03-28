@@ -129,13 +129,10 @@ end
 
 local ESPFonts = { }
 local SelectedESPFont
-local Options, MiscOptions
-    -- Check if Esp exists and has Unload method before calling
+
+local Options, MiscOptions do
     if getgenv().Esp then 
-        if type(getgenv().Esp.Unload) == "function" then
-            getgenv().Esp.Unload()
-        end
-        getgenv().Esp = nil
+        getgenv().Esp.Unload()
     end 
 
     local Workspace = cloneref(game:GetService("Workspace"))
@@ -241,20 +238,50 @@ local Options, MiscOptions
 
     Options = setmetatable({}, {__index = MiscOptions, __newindex = function(self, key, value) Esp.RefreshElements(key, value) end});
 
-local Fonts = {
-    ["ProggyClean"] = Font.new("rbxasset://fonts/families/SourceSansPro.json"),
-    ["Tahoma"] = Font.new("rbxasset://fonts/families/SourceSansPro.json"),
-    ["Verdana"] = Font.new("rbxasset://fonts/families/SourceSansPro.json"),
-    ["SmallestPixel"] = Font.new("rbxasset://fonts/families/SourceSansPro.json"),
-    ["ProggyTiny"] = Font.new("rbxasset://fonts/families/SourceSansPro.json"),
-    ["Minecraftia"] = Font.new("rbxasset://fonts/families/SourceSansPro.json"),
-    ["Tahoma Bold"] = Font.new("rbxasset://fonts/families/SourceSansPro.json")
-}
+    local Fonts = {}; do
+        local function RegisterFont(Name, Weight, Style, Asset)
+            if not isfile(Asset.Id) then
+                writefile(Asset.Id, Asset.Font)
+            end
 
-local ESPFonts = {}
-for name, font in pairs(Fonts) do
-    ESPFonts[name] = font
-end
+            local Data = {
+                name = Name,
+                faces = {
+                    {
+                        name = "Normal",
+                        weight = Weight,
+                        style = Style,
+                        assetId = getcustomasset(Asset.Id),
+                    },
+                },
+            }
+
+            if not isfile(Name .. ".font") then
+                writefile(Name .. ".font", HttpService:JSONEncode(Data))
+            end
+
+            return getcustomasset(Name .. ".font");
+        end
+
+        local FontNames = {
+            ["ProggyClean"] = "ProggyClean.ttf",
+            ["Tahoma"] = "fs-tahoma-8px.ttf",
+            ["Verdana"] = "Verdana-Font.ttf",
+            ["SmallestPixel"] = "smallest_pixel-7.ttf",
+            ["ProggyTiny"] = "ProggyTiny.ttf",
+            ["Minecraftia"] = "Minecraftia-Regular.ttf",
+            ["Tahoma Bold"] = "tahoma_bold.ttf"
+        }
+
+        for name, suffix in FontNames do 
+            local RegisteredFont = RegisterFont(name, 400, "Normal", {
+                Id = suffix,
+                Font = game:HttpGet("https://github.com/i77lhm/storage/raw/refs/heads/main/fonts/" .. suffix),
+            }) 
+
+            Fonts[name] = Font.new(RegisteredFont, Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+        end
+    end
 
     getgenv().Esp = { 
         Players = {}, 
@@ -1378,17 +1405,23 @@ end
         end 
     end
 
-for _,player in Players:GetPlayers() do 
-    if player == Players.LocalPlayer then continue end
-    
-    -- Safely call CreateObject if it exists
-    if Esp and type(Esp.CreateObject) == "function" then
-        local success, err = pcall(function()
-            Esp.CreateObject(player)
-        end)
-        if not success then
-            warn("Failed to create ESP object for " .. player.Name .. ": " .. tostring(err))
-        end
+    for _,player in Players:GetPlayers() do 
+        if player == Players.LocalPlayer then continue end
+        Esp.CreateObject(player)
+    end 
+
+    Esp:Connection(Players.PlayerRemoving, Esp.RemovePlayer)
+    Esp:Connection(Players.PlayerAdded, function(player)
+        Esp.CreateObject(player)
+        for index,value in MiscOptions do 
+            Options[index] = value -- gotta trigger that new index
+        end 
+    end)
+
+    Esp.Loop = RunService:BindToRenderStep("Run Loop", 0, Esp.Update)
+
+    for index,value in MiscOptions do 
+        Options[index] = value -- gotta trigger that new index
     end
 end
 
@@ -1600,7 +1633,7 @@ local Library do
 
     for Index, Value in Library.Folders do 
         if not isfolder(Value) then
-			return
+            makefolder(Value)
         end
     end
 
