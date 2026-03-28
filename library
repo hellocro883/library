@@ -238,54 +238,20 @@ local Options, MiscOptions do
 
     Options = setmetatable({}, {__index = MiscOptions, __newindex = function(self, key, value) Esp.RefreshElements(key, value) end});
 
-local Fonts = {}; do
-    -- Create necessary directories at the start
-    if not isfolder("fonts") then
-        makefolder("fonts")
-    end
-
-    local function RegisterFont(Name, Weight, Style, Asset)
-        if not isfile(Asset.Id) then
-            writefile(Asset.Id, Asset.Font)
-        end
-
-        local Data = {
-            name = Name,
-            faces = {
-                {
-                    name = "Normal",
-                    weight = Weight,
-                    style = Style,
-                    assetId = getcustomasset(Asset.Id),
-                },
-            },
-        }
-
-        local fontFileName = Name .. ".font"
-        if not isfile(fontFileName) then
-            writefile(fontFileName, HttpService:JSONEncode(Data))
-        end
-
-        return getcustomasset(fontFileName);
-    end
-
-    local FontNames = {
-        ["ProggyClean"] = "ProggyClean.ttf",
-        ["Tahoma"] = "fs-tahoma-8px.ttf",
-        ["Verdana"] = "Verdana-Font.ttf",
-        ["SmallestPixel"] = "smallest_pixel-7.ttf",
-        ["ProggyTiny"] = "ProggyTiny.ttf",
-        ["Minecraftia"] = "Minecraftia-Regular.ttf",
-        ["Tahoma Bold"] = "tahoma_bold.ttf"
+llocal Fonts = {}; do
+    -- Use default Roblox fonts instead of custom ones
+    local DefaultFonts = {
+        ["ProggyClean"] = Enum.Font.Code,
+        ["Tahoma"] = Enum.Font.SourceSans,
+        ["Verdana"] = Enum.Font.SourceSans,
+        ["SmallestPixel"] = Enum.Font.SourceSans,
+        ["ProggyTiny"] = Enum.Font.Code,
+        ["Minecraftia"] = Enum.Font.SourceSans,
+        ["Tahoma Bold"] = Enum.Font.SourceSansBold
     }
 
-    for name, suffix in FontNames do 
-        local RegisteredFont = RegisterFont(name, 400, "Normal", {
-            Id = "fonts/" .. suffix,
-            Font = game:HttpGet("https://github.com/i77lhm/storage/raw/refs/heads/main/fonts/" .. suffix),
-        }) 
-
-        Fonts[name] = Font.new(RegisteredFont, Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+    for name, fontEnum in DefaultFonts do
+        Fonts[name] = fontEnum
     end
 end
 
