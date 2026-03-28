@@ -238,7 +238,7 @@ local Options, MiscOptions do
 
     Options = setmetatable({}, {__index = MiscOptions, __newindex = function(self, key, value) Esp.RefreshElements(key, value) end});
 
-llocal Fonts = {}; do
+local Fonts = {}; do
     -- Use default Roblox fonts instead of custom ones
     local DefaultFonts = {
         ["ProggyClean"] = Enum.Font.Code,
